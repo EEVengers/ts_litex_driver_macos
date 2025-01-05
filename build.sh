@@ -8,6 +8,6 @@ codesign -s - -f --entitlements "litepcie/litepcie.entitlements" "build/Debug/li
 codesign -s - -f --entitlements "litepcie-manager/litepcie_manager.entitlements" "build/Debug/litepcie-manager.app"
 codesign -s - -f --entitlements "litepcie-client/litepcie_client.entitlements" "build/Debug/litepcie-client.app"
 
-clang litepcie_util.c -o litepcie_util -I liblitepcie/ -I litepcie -lm -lliblitepcie -L build/Debug
+clang litepcie_util.c -o build/Debug/litepcie_util -I liblitepcie/ -I litepcie -lm -lliblitepcie -L build/Debug
 
-codesign -s - -f --entitlements "litepcie-client/litepcie_client.entitlements" litepcie_util
+codesign -s - -f --entitlements "litepcie-client/litepcie_client.entitlements" build/Debug/litepcie_util
