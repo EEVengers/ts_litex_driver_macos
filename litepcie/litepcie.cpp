@@ -238,6 +238,7 @@ kern_return_t litepcie::StartDMAReaderChannel(int chan_idx, bool loop)
 
     ivars->channel[chan_idx]->dmaCounts->hwReaderCountTotal = 0;
     ivars->channel[chan_idx]->dmaCounts->hwReaderCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderLost = 0;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_LOOP_PROG_N_ADDR), loop ? 1 : 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_ENABLE_ADDR), 1);
@@ -255,6 +256,7 @@ kern_return_t litepcie::StartDMAWriterChannel(int chan_idx, bool loop)
 
     ivars->channel[chan_idx]->dmaCounts->hwWriterCountTotal = 0;
     ivars->channel[chan_idx]->dmaCounts->hwWriterCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterLost = 0;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_LOOP_PROG_N_ADDR), loop ? 1 : 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_ENABLE_ADDR), 1);
@@ -491,24 +493,6 @@ IMPL(litepcie, Start)
     Log("BAR0: %x", buf[1]);
     Log("BAR1: %x", buf[2]);
 
-    // test our scratch register
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_CTRL_SCRATCH_ADDR), buf + 3);
-    Log("scratch: %x", buf[3]);
-    buf[3] = 0xDEADBEEF;
-    ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_CTRL_SCRATCH_ADDR), buf[3]);
-    buf[3] = 0xCAFECAFE;
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_CTRL_SCRATCH_ADDR), buf + 3);
-    Log("scratch: %x", buf[3]);
-
-    // check led register and set pattern
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_LEDS_BASE), buf + 3);
-    Log("led: %x", buf[3]);
-    buf[3] = 0b0101;
-    ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_LEDS_BASE), buf[3]);
-    buf[3] = 0b0101;
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_LEDS_BASE), buf + 3);
-    Log("led: %x", buf[3]);
-
     while ((ret = IOInterruptDispatchSource::GetInterruptType(ivars->pciDevice, msiInterruptIndex, &interruptType)) == kIOReturnSuccess) {
         Log("checking interrupt: %i type: %llx", msiInterruptIndex, interruptType);
         if ((interruptType & kIOInterruptTypePCIMessaged) != 0) {
@@ -560,9 +544,6 @@ IMPL(litepcie, Start)
     }
 
     IOSleep(10);
-
-    ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_LOOPBACK_ENABLE_ADDR), 1);
-
 #ifdef CSR_PCIE_DMA0_BASE
     ivars->channel[0] = new DMAChannel;
     ivars->channel[0]->baseAddress = CSR_PCIE_DMA0_BASE;

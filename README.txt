@@ -8,7 +8,7 @@ Not a helpful readme, just some commands used while working on this
 ./build.sh && ./reload.sh
 
 # run direct client app (and dump debug results to file)
-./build/Debug//litepcie-client.app/Contents/MacOS/litepcie-client > test.txt
+./build/Debug/litepcie-client.app/Contents/MacOS/litepcie-client > test.txt
 
 # build and run litepcielib util side
 clang litepcie_util.c -o litepcie_util -I liblitepcie/ -I litepcie -lm -lliblitepcie -L build/Debug

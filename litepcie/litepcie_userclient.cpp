@@ -137,6 +137,12 @@ kern_return_t litepcie_userclient::ExternalMethod(uint64_t selector, IOUserClien
     case LITEPCIE_FLASH: {
         ret = HandleFlash(arguments);
     } break;
+    case LITEPCIE_CONFIG_DMA: {
+        ret = HandleDMA(arguments);
+    } break;
+    case LITEPCIE_CONFIG_DMA_LOCK: {
+        ret = HandleDMALock(arguments);
+    } break;
 
     default:
         break;
@@ -149,10 +155,12 @@ Exit:
 
 kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArguments* arguments, bool is_reader)
 {
-    Log("entered");
+    Log("entered DMA Config");
     kern_return_t ret = kIOReturnSuccess;
 
     LitePCIeConfigDmaChannelData* input;
+    LitePCIeConfigDmaChannelData output;
+    DMACounts* countData;
 
     // bunch of checks to see if out input is valid on multiple levels
     if (arguments == nullptr) {
@@ -174,6 +182,13 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
         ret = kIOReturnBadArgument;
         goto Exit;
     }
+
+    ret = ivars->litepcie->GetDmaCountDescriptor(input->channel, (IOMemoryDescriptor**)&countData);
+
+    output.channel = input->channel;
+    output.enable = input->enable;
+    output.sw_count = input->sw_count; //TODO
+    output.lost_count = 0; //TODO
     
     if (is_reader) {
         if (ivars->litepcie->IsDMAReaderChannelEnabled(input->channel) != input->enable) {
@@ -183,7 +198,9 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
             } else {
                 ivars->litepcie->StopDMAReaderChannel(input->channel);
             }
+            output.sw_count = 0 ; //TODO
         }
+        output.hw_count = countData->hwReaderCountTotal;
     } else {
         if (ivars->litepcie->IsDMAWriterChannelEnabled(input->channel) != input->enable) {
             if (input->enable){
@@ -192,11 +209,30 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
             } else {
                 ivars->litepcie->StopDMAWriterChannel(input->channel);
             }
+            output.sw_count = 0 ; //TODO
         }
+        output.hw_count = countData->hwWriterCountTotal;
     }
-    
+
+    // send our output out using osdata
+    if(arguments->structureOutputDescriptor == nullptr)
+    {
+        arguments->structureOutput = OSData::withBytes(&output, sizeof(LitePCIeConfigDmaChannelData));
+    }
+    else if(arguments->structureOutputMaximumSize < sizeof(LitePCIeConfigDmaChannelData))
+    {
+        Log("Invalid DMA Config output data size");
+    }
+    else
+    {
+        IOMemoryMap* outMap;
+        arguments->structureOutputDescriptor->CreateMapping(0, 0, 0, 0, 0, &outMap);
+        memcpy((uint8_t*)outMap->GetAddress(), &output, sizeof(LitePCIeConfigDmaChannelData));
+        OSSafeReleaseNULL(outMap);
+    }
+
 Exit:
-    Log("finished");
+    Log("finished %d", ret);
     return ret;
 }
 
@@ -301,7 +337,99 @@ Exit:
     Log("finished");
     return ret;
 }
+kern_return_t litepcie_userclient::HandleDMA(IOUserClientMethodArguments* arguments)
+{
+    Log("entered");
+    kern_return_t ret = kIOReturnSuccess;
+    
+    LitePCIeDmaLoopbackData* input;
 
+    // bunch of checks to see if out input is valid on multiple levels
+    if (arguments == nullptr) {
+        Log("Arguments were null");
+        ret = kIOReturnBadArgument;
+        goto Exit;
+    }
+
+    if (arguments->structureInput != nullptr) {
+        input = (LitePCIeDmaLoopbackData*)arguments->structureInput->getBytesNoCopy();
+    } else {
+        Log("structureInput was null");
+        ret = kIOReturnBadArgument;
+        goto Exit;
+    }
+#ifdef CSR_PCIE_DMA0_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 0) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA0_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+#ifdef CSR_PCIE_DMA1_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 1) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA1_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+#ifdef CSR_PCIE_DMA2_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 2) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA2_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+#ifdef CSR_PCIE_DMA3_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 3) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA3_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+#ifdef CSR_PCIE_DMA4_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 4) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA4_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+#ifdef CSR_PCIE_DMA5_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 5) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA5_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+#ifdef CSR_PCIE_DMA6_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 6) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA6_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+#ifdef CSR_PCIE_DMA7_LOOPBACK_ENABLE_ADDR
+    if (input->channel == 7) {
+        ivars->litepcie->WriteMemory(CSR_TO_OFFSET(CSR_PCIE_DMA7_LOOPBACK_ENABLE_ADDR), input->loop_en ? 1 : 0);
+    }
+#endif
+
+Exit:
+    Log("finished");
+    return ret;
+}
+kern_return_t litepcie_userclient::HandleDMALock(IOUserClientMethodArguments* arguments)
+{
+    Log("entered");
+    kern_return_t ret = kIOReturnSuccess;
+    LitePCIeDmaLockData* input;
+
+    // bunch of checks to see if out input is valid on multiple levels
+    if (arguments == nullptr) {
+        Log("Arguments were null");
+        ret = kIOReturnBadArgument;
+        goto Exit;
+    }
+
+    if (arguments->structureInput != nullptr) {
+        input = (LitePCIeDmaLockData*)arguments->structureInput->getBytesNoCopy();
+    } else {
+        Log("structureInput was null");
+        ret = kIOReturnBadArgument;
+        goto Exit;
+    }
+
+    //TODO Add Locks
+
+Exit:
+    Log("finished");
+    return ret;
+}
 kern_return_t litepcie_userclient::HandleReadCSR(IOUserClientMethodArguments* arguments)
 {
     Log("entered");

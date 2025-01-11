@@ -14,6 +14,8 @@ enum LitePCIeMessageType {
     LITEPCIE_WRITE_CSR,
     LITEPCIE_ICAP,
     LITEPCIE_FLASH,
+	LITEPCIE_CONFIG_DMA,
+	LITEPCIE_CONFIG_DMA_LOCK
 };
 
 enum LitePCIeMemoryType {
@@ -27,13 +29,18 @@ enum LitePCIeMemoryType {
 typedef struct DMACounts {
     uint64_t hwReaderCountTotal;
     uint64_t hwReaderCountPrev;
+    uint64_t hwReaderLost;
     uint64_t hwWriterCountTotal;
     uint64_t hwWriterCountPrev;
+    uint64_t hwWriterLost;
 } __attribute__((packed)) DMACounts;
 
 typedef struct LitePCIeConfigDmaChannelData {
+    uint32_t enable;
     uint32_t channel;
-    bool enable;
+	int64_t hw_count;
+	int64_t sw_count;
+	int64_t lost_count;
 } __attribute__((packed)) LitePCIeConfigDmaChannelData;
 
 typedef struct LitePCIeFlashCallData {
@@ -47,4 +54,17 @@ typedef struct LitePCIeICAPCallData {
     uint32_t data;
 } __attribute__((packed)) LitePCIeICAPCallData;
 
+typedef struct LitePCIeDmaLoopbackData {
+    uint8_t loop_en;
+    uint8_t channel;
+} __attribute__((packed)) LitePCIeDmaLoopbackData;
+
+typedef struct LitePCIeDmaLockData {
+	uint8_t dma_reader_request;
+	uint8_t dma_writer_request;
+	uint8_t dma_reader_release;
+	uint8_t dma_writer_release;
+	uint8_t dma_reader_status;
+	uint8_t dma_writer_status;
+} __attribute__((packed)) LitePCIeDmaLockData;
 #endif /* litepcie_ext_h */
