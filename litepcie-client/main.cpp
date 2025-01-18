@@ -185,9 +185,9 @@ int main(int argc, const char* argv[])
             uint64_t startTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
             for (int j = 0; j < DMA_BUFFER_COUNT; j++) {
                 while(dmaCounts->hwReaderCountTotal <= swReaderCount);
-                memcpy(readerBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       tmpBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       DMA_BUFFER_SIZE);
+                memcpy(readerBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_RD_BUFFER_SIZE),
+                       tmpBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_RD_BUFFER_SIZE),
+                       DMA_RD_BUFFER_SIZE);
                 swReaderCount += 1;
             }
             uint64_t endTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
@@ -202,9 +202,9 @@ int main(int argc, const char* argv[])
             uint64_t startTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
             for (int j = 0; j < DMA_BUFFER_COUNT; j++) {
                 while(dmaCounts->hwWriterCountTotal <= swWriterCount);
-                memcmp(writerBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       tmpBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       DMA_BUFFER_SIZE);
+                memcmp(writerBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_WR_BUFFER_SIZE),
+                       tmpBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_WR_BUFFER_SIZE),
+                       DMA_WR_BUFFER_SIZE);
                 swWriterCount += 1;
             }
             uint64_t endTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
