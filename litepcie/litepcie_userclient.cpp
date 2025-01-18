@@ -160,7 +160,6 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
 
     LitePCIeConfigDmaChannelData* input;
     LitePCIeConfigDmaChannelData output;
-    DMACounts* countData;
 
     // bunch of checks to see if out input is valid on multiple levels
     if (arguments == nullptr) {
@@ -183,8 +182,6 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
         goto Exit;
     }
 
-    ret = ivars->litepcie->GetDmaCountDescriptor(input->channel, (IOMemoryDescriptor**)&countData);
-
     output.channel = input->channel;
     output.enable = input->enable;
     output.sw_count = input->sw_count; //TODO
@@ -200,7 +197,7 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
             }
             output.sw_count = 0 ; //TODO
         }
-        output.hw_count = countData->hwReaderCountTotal;
+        output.hw_count = ivars->litepcie->GetDmaWriterCount(input->channel);
     } else {
         if (ivars->litepcie->IsDMAWriterChannelEnabled(input->channel) != input->enable) {
             if (input->enable){
@@ -211,13 +208,14 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
             }
             output.sw_count = 0 ; //TODO
         }
-        output.hw_count = countData->hwWriterCountTotal;
+        output.hw_count = ivars->litepcie->GetDmaWriterCount(input->channel);
     }
 
     // send our output out using osdata
     if(arguments->structureOutputDescriptor == nullptr)
     {
         arguments->structureOutput = OSData::withBytes(&output, sizeof(LitePCIeConfigDmaChannelData));
+        Log("DMA Struct Output with OSData, counts %llu", output.hw_count);
     }
     else if(arguments->structureOutputMaximumSize < sizeof(LitePCIeConfigDmaChannelData))
     {
@@ -229,6 +227,7 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
         arguments->structureOutputDescriptor->CreateMapping(0, 0, 0, 0, 0, &outMap);
         memcpy((uint8_t*)outMap->GetAddress(), &output, sizeof(LitePCIeConfigDmaChannelData));
         OSSafeReleaseNULL(outMap);
+        Log("DMA Struct Output with Descriptor, counts %llu", output.hw_count);
     }
 
 Exit:

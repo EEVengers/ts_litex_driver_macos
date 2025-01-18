@@ -36,6 +36,8 @@ public:
     kern_return_t StopDMAReaderChannel(int chan_idx) LOCALONLY;
     kern_return_t StopDMAWriterChannel(int chan_idx) LOCALONLY;
     kern_return_t StopDMAChannel(int chan_idx) LOCALONLY;
+    uint64_t GetDmaWriterCount(int chan_idx) LOCALONLY;
+    uint64_t GetDmaReaderCount(int chan_idx) LOCALONLY;
     void CleanupDMAChannel(int chan_idx) LOCALONLY;
 
     kern_return_t CreateReaderBufferDescriptor(int chan_idx, IOMemoryDescriptor** buffer) LOCALONLY;
