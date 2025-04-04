@@ -450,6 +450,85 @@ uint64_t litepcie::GetDmaReaderCount(int chan_idx)
     return hwReaderCount;
 }
 
+uint64_t litepcie::DmaChannelRead(int chan_index, IOMemoryMap* buffer)
+{
+    int64_t availWriterCount;
+    uint64_t bytesRead, length, overflows;
+    
+    Log("entered");
+    
+    bytesRead = 0;
+    length = buffer->GetLength();
+
+    while(bytesRead < length)
+    {
+        if(!ivars->channel[chan_index]->writerEnabled)
+        {
+            Log("DmaChannelRead failed, writer not enabled");
+            break;
+        }
+        if(length - bytesRead < DMA_WR_BUFFER_SIZE)
+        {
+            //Must transfer in buffer-sized chunks
+            break;
+        }
+        IOLockLock(ivars->channel[chan_index]->writerLock);
+        availWriterCount = ivars->channel[chan_index]->dmaCounts->hwWriterCountTotal - ivars->channel[chan_index]->dmaCounts->swWriterCount;
+        IOLockUnlock(ivars->channel[chan_index]->writerLock);
+
+        if(availWriterCount > 0)
+        {
+            if(availWriterCount > (DMA_BUFFER_COUNT - DMA_BUFFER_PER_IRQ))
+            {
+                overflows++;
+            }
+            else
+            {
+                //memcpy
+                memcpy(reinterpret_cast<uint8_t*>(buffer->GetAddress() + bytesRead),
+                    reinterpret_cast<uint8_t*>((ivars->channel[chan_index]->dmaWriterVirtualSegments[
+                        ivars->channel[chan_index]->dmaCounts->swWriterCount % DMA_BUFFER_COUNT]->address)),
+                    DMA_WR_BUFFER_SIZE
+                );
+                bytesRead += DMA_WR_BUFFER_SIZE;
+            }
+            ivars->channel[chan_index]->dmaCounts->swWriterCount++;
+        }
+        else
+        {
+            //Wait until more data available
+            kern_return_t sleepResult;
+            sleepResult = ivars->defaultDispatchQueue->SleepWithTimeout(&ivars->channel[chan_index]->writerEvent, 500);
+            if(sleepResult == kIOReturnTimeout)
+            {
+                Log("Data not received");
+            }
+        }
+
+    }
+
+    if(overflows > 0)
+    {
+        Log("Overflow Error in DMAChannelRead: %lld", overflows);
+        ivars->channel[chan_index]->dmaCounts->hwWriterLost += overflows;
+    }
+
+    Log("finished");
+    return bytesRead;
+}
+
+uint64_t litepcie::DmaChannelWrite(int chan_index, IOMemoryMap* buffer)
+{
+    uint64_t hwReaderCount;
+    Log("entered");
+    
+    IOLockLock(ivars->channel[chan_index]->readerLock);
+    hwReaderCount = ivars->channel[chan_index]->dmaCounts->hwReaderCountTotal;
+    IOLockUnlock(ivars->channel[chan_index]->readerLock);
+    
+    Log("finished");
+    return hwReaderCount;
+}
 
 bool litepcie::init(void)
 {
@@ -687,6 +766,8 @@ void IMPL(litepcie, InterruptOccurred)
 				ivars->channel[i]->dmaCounts->hwReaderCountTotal += (1 << (int)(floor(log2(DMA_BUFFER_COUNT)) + 16));
 			ivars->channel[i]->dmaCounts->hwReaderCountPrev = ivars->channel[i]->dmaCounts->hwReaderCountTotal;
             IOLockUnlock(ivars->channel[i]->readerLock);
+            // Wakeup must be called from the queue context.  Dispatch a handler to wakup the write thread
+            ivars->defaultDispatchQueue->Wakeup(&ivars->channel[i]->readerEvent);
         }
 
         if (vector & (1 << ivars->channel[i]->writerInterrupt)) {
@@ -702,6 +783,8 @@ void IMPL(litepcie, InterruptOccurred)
 				ivars->channel[i]->dmaCounts->hwWriterCountTotal += (1 << (int)(floor(log2(DMA_BUFFER_COUNT)) + 16));
 			ivars->channel[i]->dmaCounts->hwWriterCountPrev = ivars->channel[i]->dmaCounts->hwWriterCountTotal;
             IOLockUnlock(ivars->channel[i]->writerLock);
+            // Wakeup must be called from the queue context.  Dispatch a handler to wakup the read thread
+            ivars->defaultDispatchQueue->Wakeup(&ivars->channel[i]->writerEvent);
         }
 
         if (printLog) {

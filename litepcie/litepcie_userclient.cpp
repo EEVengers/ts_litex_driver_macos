@@ -2,6 +2,7 @@
 
 #include <DriverKit/IOLib.h>
 #include <DriverKit/IOMemoryMap.h>
+#include <DriverKit/IOMemoryDescriptor.h>
 #include <DriverKit/IOTimerDispatchSource.h>
 #include <DriverKit/IOUserClient.h>
 #include <DriverKit/IOUserServer.h>
@@ -143,6 +144,12 @@ kern_return_t litepcie_userclient::ExternalMethod(uint64_t selector, IOUserClien
     case LITEPCIE_CONFIG_DMA_LOCK: {
         ret = HandleDMALock(arguments);
     } break;
+    case LITEPCIE_DMA_READ: {
+        ret = HandleDMARead(arguments);
+    } break;
+    case LITEPCIE_DMA_WRITE: {
+        ret = HandleDMAWrite(arguments);
+    } break;
 
     default:
         break;
@@ -197,7 +204,7 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
             }
             output.sw_count = 0 ; //TODO
         }
-        output.hw_count = ivars->litepcie->GetDmaWriterCount(input->channel);
+        output.hw_count = ivars->litepcie->GetDmaReaderCount(input->channel);
     } else {
         if (ivars->litepcie->IsDMAWriterChannelEnabled(input->channel) != input->enable) {
             if (input->enable){
@@ -484,6 +491,87 @@ kern_return_t litepcie_userclient::HandleWriteCSR(IOUserClientMethodArguments* a
     }
     
     ivars->litepcie->WriteMemory(input[0], (uint32_t)input[1]);
+
+Exit:
+    Log("finished");
+    return ret;
+}
+
+kern_return_t litepcie_userclient::HandleDMARead(IOUserClientMethodArguments* arguments)
+{
+    Log("entered");
+    kern_return_t ret = kIOReturnSuccess;
+    LitePCIeDmaTransferData *input, output;
+    IOBufferMemoryDescriptor *readBuffer;
+    IOMemoryMap *readMem;
+    IOAddressSegment readAddr;
+
+    // bunch of checks to see if out input is valid on multiple levels
+    if (arguments == nullptr) {
+        Log("Arguments were null");
+        ret = kIOReturnBadArgument;
+        goto Exit;
+    }
+
+    input = (LitePCIeDmaTransferData*)arguments->structureInput->getBytesNoCopy();
+
+    readAddr.address = (uint64_t)input->buffer_addr;
+    readAddr.length  = input->length;
+    ret = IOUserClient::CreateMemoryDescriptorFromClient(kIOMemoryDirectionInOut, 1, &readAddr, (IOMemoryDescriptor**)&readBuffer);
+    if(ret != kIOReturnSuccess || readBuffer == nullptr)
+    {
+        Log("unable to create readBuffer");
+        goto Exit;
+    }
+
+    ret = readBuffer->CreateMapping(kIOMemoryMapCacheModeDefault, 0, 0, 0, 0, &readMem);
+    if(ret != kIOReturnSuccess || readMem == nullptr)
+    {
+        Log("unable to create readMap");
+        readBuffer->release();
+        ret = kIOReturnNoMemory;
+        goto Exit;
+    }
+    
+    output.channel = input->channel;
+    output.buffer_addr = input->buffer_addr;
+    output.length = ivars->litepcie->DmaChannelRead((int)input->channel, readMem);
+    
+    arguments->structureOutput = OSData::withBytes(&output, sizeof(LitePCIeDmaTransferData));
+
+    readBuffer->release();
+    readMem->release();
+
+Exit:
+    Log("finished");
+    return ret;
+}
+
+kern_return_t litepcie_userclient::HandleDMAWrite(IOUserClientMethodArguments* arguments)
+{
+    Log("entered");
+    kern_return_t ret = kIOReturnSuccess;
+    LitePCIeDmaTransferData* input;
+
+    // bunch of checks to see if out input is valid on multiple levels
+    if (arguments == nullptr) {
+        Log("Arguments were null");
+        ret = kIOReturnBadArgument;
+        goto Exit;
+    }
+
+    if (arguments->structureInput != nullptr) {
+        input = (LitePCIeDmaTransferData*)arguments->structureInput->getBytesNoCopy();
+    } else {
+        Log("structureInput was null");
+        ret = kIOReturnBadArgument;
+        goto Exit;
+    }
+
+    // IOMemoryMap* inMap;
+    // arguments->structureInputDescriptor->CreateMapping(0, 0, 0, 0, 0, &inMap);
+    // ivars->litepcie->DmaChannelWrite(input->channel, inMap);
+
 
 Exit:
     Log("finished");

@@ -15,7 +15,9 @@ enum LitePCIeMessageType {
     LITEPCIE_ICAP,
     LITEPCIE_FLASH,
 	LITEPCIE_CONFIG_DMA,
-	LITEPCIE_CONFIG_DMA_LOCK
+	LITEPCIE_CONFIG_DMA_LOCK,
+    LITEPCIE_DMA_READ,
+    LITEPCIE_DMA_WRITE
 };
 
 enum LitePCIeMemoryType {
@@ -33,6 +35,8 @@ typedef struct DMACounts {
     uint64_t hwWriterCountTotal;
     uint64_t hwWriterCountPrev;
     uint64_t hwWriterLost;
+    uint64_t swReaderCount;
+    uint64_t swWriterCount;
 } __attribute__((packed)) DMACounts;
 
 typedef struct LitePCIeConfigDmaChannelData {
@@ -67,4 +71,11 @@ typedef struct LitePCIeDmaLockData {
 	uint8_t dma_reader_status;
 	uint8_t dma_writer_status;
 } __attribute__((packed)) LitePCIeDmaLockData;
+
+typedef struct LitePCIeDmaTransferData {
+    uint32_t channel;
+    uint32_t length;
+    void* buffer_addr;
+} __attribute__((packed)) LitePCIeDmaTransferData;
+
 #endif /* litepcie_ext_h */

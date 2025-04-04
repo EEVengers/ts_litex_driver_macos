@@ -30,6 +30,8 @@ public:
     kern_return_t HandleConfigDmaChannel(IOUserClientMethodArguments* arguments, bool is_reader) LOCALONLY;
     kern_return_t HandleDMA(IOUserClientMethodArguments* arguments) LOCALONLY;
     kern_return_t HandleDMALock(IOUserClientMethodArguments* arguments) LOCALONLY;
+    kern_return_t HandleDMARead(IOUserClientMethodArguments* arguments) LOCALONLY;
+    kern_return_t HandleDMAWrite(IOUserClientMethodArguments* arguments) LOCALONLY;
 };
 
 #endif /* litepcie_userclient_h */
