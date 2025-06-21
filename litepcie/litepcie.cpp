@@ -453,7 +453,7 @@ uint64_t litepcie::GetDmaReaderCount(int chan_idx)
 uint64_t litepcie::DmaChannelRead(int chan_index, IOMemoryMap* buffer)
 {
     int64_t availWriterCount;
-    uint64_t bytesRead, length, overflows;
+    uint64_t bytesRead, length, overflows=0;
     
     Log("entered");
     

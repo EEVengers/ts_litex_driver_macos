@@ -129,8 +129,6 @@ int main(int argc, const char* argv[])
 
     printf("result: addr: 0x%lx data: 0x%08x\n", CSR_TO_OFFSET(CSR_DNA_BASE), readl(connection, CSR_TO_OFFSET(CSR_DNA_BASE)));
 
-    writel(connection, CSR_TO_OFFSET(CSR_LEDS_BASE), 0x1);
-
     mach_vm_address_t readerAddress = 0;
     mach_vm_address_t writerAddress = 0;
     mach_vm_address_t countAddress = 0;
