@@ -41,6 +41,10 @@ public:
     void CleanupDMAChannel(int chan_idx) LOCALONLY;
     uint64_t DmaChannelRead(int chan_index, IOMemoryMap* buffer) LOCALONLY;
     uint64_t DmaChannelWrite(int chan_index, IOMemoryMap* buffer) LOCALONLY;
+    uint8_t DmaChannelGetReaderLock(int chan_idx) LOCALONLY;
+    uint8_t DmaChannelGetWriterLock(int chan_idx) LOCALONLY;
+    uint8_t DmaChannelReleaseReaderLock(int chan_idx) LOCALONLY;
+    uint8_t DmaChannelReleaseWriterLock(int chan_idx) LOCALONLY;
 
     kern_return_t CreateReaderBufferDescriptor(int chan_idx, IOMemoryDescriptor** buffer) LOCALONLY;
     kern_return_t CreateWriterBufferDescriptor(int chan_idx, IOMemoryDescriptor** buffer) LOCALONLY;

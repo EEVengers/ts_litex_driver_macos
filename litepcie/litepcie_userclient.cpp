@@ -23,6 +23,8 @@ struct litepcie_userclient_IVars {
     IOBufferMemoryDescriptor* rdma[16] = {nullptr};
     IOBufferMemoryDescriptor* wdma[16] = {nullptr};
     IOBufferMemoryDescriptor* cdma[16] = {nullptr};
+    uint8_t dmaWriterLocks[DMA_CHANNEL_COUNT] = {0};
+    uint8_t dmaReaderLocks[DMA_CHANNEL_COUNT] = {0};
 };
 
 bool litepcie_userclient::init(void)
@@ -191,8 +193,8 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
 
     output.channel = input->channel;
     output.enable = input->enable;
-    output.sw_count = input->sw_count; //TODO
-    output.lost_count = 0; //TODO
+    output.sw_count = input->sw_count;
+    output.lost_count = 0;
     
     if (is_reader) {
         if (ivars->litepcie->IsDMAReaderChannelEnabled(input->channel) != input->enable) {
@@ -202,7 +204,7 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
             } else {
                 ivars->litepcie->StopDMAReaderChannel(input->channel);
             }
-            output.sw_count = 0 ; //TODO
+            output.sw_count = 0;
         }
         output.hw_count = ivars->litepcie->GetDmaReaderCount(input->channel);
     } else {
@@ -213,7 +215,7 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
             } else {
                 ivars->litepcie->StopDMAWriterChannel(input->channel);
             }
-            output.sw_count = 0 ; //TODO
+            output.sw_count = 0;
         }
         output.hw_count = ivars->litepcie->GetDmaWriterCount(input->channel);
     }
@@ -414,6 +416,7 @@ kern_return_t litepcie_userclient::HandleDMALock(IOUserClientMethodArguments* ar
     Log("entered");
     kern_return_t ret = kIOReturnSuccess;
     LitePCIeDmaLockData* input;
+    LitePCIeDmaLockData output;
 
     // bunch of checks to see if out input is valid on multiple levels
     if (arguments == nullptr) {
@@ -430,7 +433,27 @@ kern_return_t litepcie_userclient::HandleDMALock(IOUserClientMethodArguments* ar
         goto Exit;
     }
 
-    //TODO Add Locks
+    output.dma_reader_status = 1;
+    if (input->dma_reader_request && ivars->dmaReaderLocks[0] == 0) {
+        Log("DMA Reader Request");
+        ivars->dmaReaderLocks[0] = ivars->litepcie->DmaChannelGetReaderLock(0);
+    }
+    else if (input->dma_reader_release && ivars->dmaReaderLocks[0] != 0) {
+        Log("DMA Reader Release");
+        ivars->dmaReaderLocks[0] = ivars->litepcie->DmaChannelReleaseReaderLock(0);
+    }
+    
+    output.dma_writer_status = 1;
+    if (input->dma_writer_request && ivars->dmaWriterLocks[0] == 0) {
+        Log("DMA Writer Request");
+        ivars->dmaWriterLocks[0] = ivars->litepcie->DmaChannelGetWriterLock(0);
+    }
+    else if (input->dma_writer_release && ivars->dmaWriterLocks[0] != 0) {
+        Log("DMA Writer Release");
+        ivars->dmaWriterLocks[0] = ivars->litepcie->DmaChannelReleaseWriterLock(0);
+    }
+
+    arguments->structureOutput = OSData::withBytes(&output, sizeof(LitePCIeDmaLockData));
 
 Exit:
     Log("finished");
@@ -535,8 +558,8 @@ kern_return_t litepcie_userclient::HandleDMARead(IOUserClientMethodArguments* ar
     
     output.channel = input->channel;
     output.buffer_addr = input->buffer_addr;
-    output.length = ivars->litepcie->DmaChannelRead((int)input->channel, readMem);
-    
+    output.length =  (uint32_t)ivars->litepcie->DmaChannelRead((int)input->channel, readMem);
+
     arguments->structureOutput = OSData::withBytes(&output, sizeof(LitePCIeDmaTransferData));
 
     readBuffer->release();
@@ -568,9 +591,7 @@ kern_return_t litepcie_userclient::HandleDMAWrite(IOUserClientMethodArguments* a
         goto Exit;
     }
 
-    // IOMemoryMap* inMap;
-    // arguments->structureInputDescriptor->CreateMapping(0, 0, 0, 0, 0, &inMap);
-    // ivars->litepcie->DmaChannelWrite(input->channel, inMap);
+    // TODO
 
 
 Exit:

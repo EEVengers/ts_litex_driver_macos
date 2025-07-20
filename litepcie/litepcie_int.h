@@ -45,8 +45,11 @@ struct DMAChannel {
     IOLock* readerLock;
     IOLock* writerLock;
 
-    uint32_t readerEvent;
-    uint32_t writerEvent;
+    IOLock* userReaderLock;
+    IOLock* userWriterLock;
+
+    uintptr_t readerEvent;
+    uintptr_t writerEvent;
 
     IODMACommand** dmaReaderCommands;
     IOBufferMemoryDescriptor** dmaReaderBuffers;
