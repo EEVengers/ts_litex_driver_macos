@@ -3,6 +3,13 @@ Not a helpful readme, just some commands used while working on this
 ```
 # typical test workflow:
 
+# make sure you have system integrity protection disabled
+# Follow the guide here: https://developer.apple.com/documentation/security/disabling-and-enabling-system-integrity-protection
+
+# Turns on developer mode and disables some of the restrictions like having to run from /Applications
+
+systemextensionsctl developer on
+
 # build and reload client app and driverkit driver
 ./build.sh
 ./build.sh && ./reload.sh
