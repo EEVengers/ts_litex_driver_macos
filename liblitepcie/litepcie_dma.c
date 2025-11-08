@@ -69,6 +69,7 @@ void litepcie_dma_writer(struct litepcie_dma_ctrl *dma, uint8_t enable) {
     size_t outLen = sizeof(LitePCIeConfigDmaChannelData);
     data.channel = dma->dma_channel;
     data.enable = enable;
+    data.interrupt_count = DMA_BUFFER_PER_IRQ;
     
     ret = IOConnectCallStructMethod(dma->fd, LITEPCIE_CONFIG_DMA_WRITER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), &data, &outLen);
     
@@ -85,6 +86,7 @@ void litepcie_dma_reader(struct litepcie_dma_ctrl *dma, uint8_t enable) {
     LitePCIeConfigDmaChannelData data, dataOut;
     data.channel = dma->dma_channel;
     data.enable = enable;
+    data.interrupt_count = DMA_BUFFER_PER_IRQ;
     
     ret = IOConnectCallStructMethod(dma->fd, LITEPCIE_CONFIG_DMA_READER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), &data, &outLen);
     

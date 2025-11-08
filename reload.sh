@@ -2,8 +2,10 @@
 
 set -e 
 
+CONFIGURATION=Debug
+
 systemextensionsctl reset
 sleep 1
-./build/Debug/litepcie-manager.app/Contents/MacOS/litepcie-manager forceActivate
+./build/$CONFIGURATION/litepcie-manager.app/Contents/MacOS/litepcie-manager forceActivate
 sleep 1
-./build/Debug/litepcie-manager.app/Contents/MacOS/litepcie-manager forceActivate
+./build/$CONFIGURATION/litepcie-manager.app/Contents/MacOS/litepcie-manager forceActivate

@@ -52,6 +52,9 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
     ivars->channel[chan_idx]->readerEnabled = false;
     ivars->channel[chan_idx]->writerEnabled = false;
 
+    ivars->channel[chan_idx]->rd_intr_count = DMA_BUFFER_PER_IRQ;
+    ivars->channel[chan_idx]->wr_intr_count = DMA_BUFFER_PER_IRQ;
+
     ivars->channel[chan_idx]->dmaReaderVirtualSegments = IONew(IOAddressSegment*, DMA_BUFFER_COUNT);
     ivars->channel[chan_idx]->dmaReaderPhysicalSegments = IONew(IOAddressSegment*, DMA_BUFFER_COUNT);
     ivars->channel[chan_idx]->dmaReaderCommands = IONew(IODMACommand*, DMA_BUFFER_COUNT);
@@ -169,7 +172,7 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
     return ret;
 }
 
-kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx)
+kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx, uint32_t count)
 {
     Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
@@ -177,6 +180,20 @@ kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx)
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_ENABLE_ADDR), 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_RESET_ADDR), 1);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_LOOP_PROG_N_ADDR), 0);
+
+    /* Validate Interrupt Config */
+    if(count == 0)
+    {
+        ivars->channel[chan_idx]->rd_intr_count = DMA_BUFFER_PER_IRQ;
+    }
+    else if (count > (DMA_BUFFER_COUNT / 2))
+    {
+        ivars->channel[chan_idx]->rd_intr_count = DMA_BUFFER_COUNT / 2;
+    }
+    else
+    {
+        ivars->channel[chan_idx]->rd_intr_count = count;
+    }
 
     for (int i = 0; i < DMA_BUFFER_COUNT; i += 1) {
         DMADescriptor desc;
@@ -186,7 +203,7 @@ kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx)
         desc.lsb = lsb;
         desc.config.reg.last = 1;
         desc.config.reg.length = DMA_RD_BUFFER_SIZE;
-        desc.config.reg.disableIRQ = (((i + 1) % DMA_BUFFER_PER_IRQ) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
+        desc.config.reg.disableIRQ = (((i + 1) % ivars->channel[chan_idx]->rd_intr_count) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
 
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_VALUE_ADDR), desc.config.raw);
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_VALUE_ADDR) + 4, lsb);
@@ -201,7 +218,7 @@ kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx)
     return ret;
 }
 
-kern_return_t litepcie::SetupDMAWriterChannel(int chan_idx)
+kern_return_t litepcie::SetupDMAWriterChannel(int chan_idx, uint32_t count)
 {
     Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
@@ -209,6 +226,20 @@ kern_return_t litepcie::SetupDMAWriterChannel(int chan_idx)
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_ENABLE_ADDR), 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_RESET_ADDR), 1);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_LOOP_PROG_N_ADDR), 0);
+
+    /* Validate Interrupt Config */
+    if(count == 0)
+    {
+        ivars->channel[chan_idx]->wr_intr_count = DMA_BUFFER_PER_IRQ;
+    }
+    else if (count > (DMA_BUFFER_COUNT / 2))
+    {
+        ivars->channel[chan_idx]->wr_intr_count = DMA_BUFFER_COUNT / 2;
+    }
+    else
+    {
+        ivars->channel[chan_idx]->wr_intr_count = count;
+    }
 
     for (int i = 0; i < DMA_BUFFER_COUNT; i += 1) {
         DMADescriptor desc;
@@ -218,7 +249,7 @@ kern_return_t litepcie::SetupDMAWriterChannel(int chan_idx)
         desc.lsb = lsb;
         desc.config.reg.last = 1;
         desc.config.reg.length = DMA_WR_BUFFER_SIZE;
-        desc.config.reg.disableIRQ = (((i + 1) % DMA_BUFFER_PER_IRQ) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
+        desc.config.reg.disableIRQ = (((i + 1) % ivars->channel[chan_idx]->wr_intr_count) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
 
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_VALUE_ADDR), desc.config.raw);
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_VALUE_ADDR) + 4, lsb);
@@ -512,7 +543,7 @@ uint64_t litepcie::DmaChannelRead(int chan_index, IOMemoryMap* buffer)
 
         if(availWriterCount > 0)
         {
-            if(availWriterCount > (DMA_BUFFER_COUNT - DMA_BUFFER_PER_IRQ))
+            if(availWriterCount > (DMA_BUFFER_COUNT - ivars->channel[chan_index]->wr_intr_count))
             {
                 overflows++;
             }

@@ -199,7 +199,7 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
     if (is_reader) {
         if (ivars->litepcie->IsDMAReaderChannelEnabled(input->channel) != input->enable) {
             if (input->enable){
-                ivars->litepcie->SetupDMAReaderChannel(input->channel);
+                ivars->litepcie->SetupDMAReaderChannel(input->channel, input->interrupt_count);
                 ivars->litepcie->StartDMAReaderChannel(input->channel, true);
             } else {
                 ivars->litepcie->StopDMAReaderChannel(input->channel);
@@ -210,7 +210,7 @@ kern_return_t litepcie_userclient::HandleConfigDmaChannel(IOUserClientMethodArgu
     } else {
         if (ivars->litepcie->IsDMAWriterChannelEnabled(input->channel) != input->enable) {
             if (input->enable){
-                ivars->litepcie->SetupDMAWriterChannel(input->channel);
+                ivars->litepcie->SetupDMAWriterChannel(input->channel, input->interrupt_count);
                 ivars->litepcie->StartDMAWriterChannel(input->channel, true);
             } else {
                 ivars->litepcie->StopDMAWriterChannel(input->channel);

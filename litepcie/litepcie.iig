@@ -29,8 +29,8 @@ public:
     kern_return_t ReadMemory(uint64_t offset, uint32_t* dest) LOCALONLY;
 
     kern_return_t InitDMAChannel(int chan_idx) LOCALONLY;
-    kern_return_t SetupDMAReaderChannel(int chan_idx) LOCALONLY;
-    kern_return_t SetupDMAWriterChannel(int chan_idx) LOCALONLY;
+    kern_return_t SetupDMAReaderChannel(int chan_idx, uint32_t count) LOCALONLY;
+    kern_return_t SetupDMAWriterChannel(int chan_idx, uint32_t count) LOCALONLY;
     kern_return_t StartDMAReaderChannel(int chan_idx, bool loop) LOCALONLY;
     kern_return_t StartDMAWriterChannel(int chan_idx, bool loop) LOCALONLY;
     kern_return_t StopDMAReaderChannel(int chan_idx) LOCALONLY;

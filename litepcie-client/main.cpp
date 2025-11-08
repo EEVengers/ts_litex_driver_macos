@@ -58,6 +58,7 @@ void config_reader_dma(io_connect_t connection, uint32_t chan_idx, bool enable)
     LitePCIeConfigDmaChannelData data {
         .channel = chan_idx,
         .enable = enable,
+        .interrupt_count = DMA_BUFFER_PER_IRQ,
     };
     
     ret = IOConnectCallStructMethod(connection, LITEPCIE_CONFIG_DMA_READER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), nullptr, 0);
@@ -75,6 +76,7 @@ void config_writer_dma(io_connect_t connection, uint32_t chan_idx, bool enable)
     LitePCIeConfigDmaChannelData data {
         .channel = chan_idx,
         .enable = enable,
+        .interrupt_count = DMA_BUFFER_PER_IRQ,
     };
     
     ret = IOConnectCallStructMethod(connection, LITEPCIE_CONFIG_DMA_WRITER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), nullptr, 0);

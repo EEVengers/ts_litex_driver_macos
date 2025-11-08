@@ -42,6 +42,7 @@ typedef struct DMACounts {
 typedef struct LitePCIeConfigDmaChannelData {
     uint32_t enable;
     uint32_t channel;
+    uint32_t interrupt_count;
 	int64_t hw_count;
 	int64_t sw_count;
 	int64_t lost_count;

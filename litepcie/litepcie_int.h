@@ -42,6 +42,9 @@ struct DMAChannel {
     bool readerEnabled;
     bool writerEnabled;
 
+    uint32_t rd_intr_count;
+    uint32_t wr_intr_count;
+
     IOLock* readerLock;
     IOLock* writerLock;
 
