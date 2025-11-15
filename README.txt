@@ -23,7 +23,7 @@ clang litepcie_util.c -o litepcie_util -I liblitepcie/ -I litepcie -lm -lliblite
 
 # few ways to view kernel level logs:
 ./log.sh
-log stream --level info --predicate 'sender == "litex.litepcie.dext"'
+log stream --level info --predicate 'sender == "eevengers.thunderscope.dext"'
 log stream --level info | grep litex
 ```
 

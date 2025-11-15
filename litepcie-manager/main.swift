@@ -18,7 +18,7 @@ RunLoop.main.perform {
   }
 
   print("Usage:")
-  print("    litepcie-manager activate|forceActivate|deactivate")
+  print("    thunderscope-manager activate|forceActivate|deactivate")
   exit(0)
 }
 

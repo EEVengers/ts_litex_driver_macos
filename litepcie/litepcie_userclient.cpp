@@ -592,6 +592,7 @@ kern_return_t litepcie_userclient::HandleDMAWrite(IOUserClientMethodArguments* a
     }
 
     // TODO
+    Log("TODO: Write user data to channel %u", input->channel);
 
 
 Exit:
