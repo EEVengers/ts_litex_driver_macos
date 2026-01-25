@@ -19,7 +19,7 @@
 		02CDFF4A2AD0DE83005D01DB /* litepcie_int.h in Headers */ = {isa = PBXBuildFile; fileRef = 02CDFF492AD0DE83005D01DB /* litepcie_int.h */; };
 		02D560132AAD6962006843ED /* ExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D5600F2AAD6962006843ED /* ExtensionManager.swift */; };
 		02D560142AAD6962006843ED /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02D560102AAD6962006843ED /* main.swift */; };
-		02D560152AAD6BD0006843ED /* litex.litepcie.dext in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = 02A93C5C2AAD4DF6001E4E3A /* litex.litepcie.dext */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		02D560152AAD6BD0006843ED /* eevengers.thunderscope.dext in Embed System Extensions */ = {isa = PBXBuildFile; fileRef = 02A93C5C2AAD4DF6001E4E3A /* eevengers.thunderscope.dext */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		02EA5CC62AD223290033662D /* litepcie_dma.h in Headers */ = {isa = PBXBuildFile; fileRef = 02EA5CBF2AD223280033662D /* litepcie_dma.h */; };
 		02EA5CC72AD223290033662D /* liblitepcie.h in Headers */ = {isa = PBXBuildFile; fileRef = 02EA5CC02AD223280033662D /* liblitepcie.h */; };
 		02EA5CC82AD223290033662D /* litepcie_flash.c in Sources */ = {isa = PBXBuildFile; fileRef = 02EA5CC12AD223280033662D /* litepcie_flash.c */; };
@@ -56,7 +56,7 @@
 			dstPath = "$(SYSTEM_EXTENSIONS_FOLDER_PATH)";
 			dstSubfolderSpec = 16;
 			files = (
-				02D560152AAD6BD0006843ED /* litex.litepcie.dext in Embed System Extensions */,
+				02D560152AAD6BD0006843ED /* eevengers.thunderscope.dext in Embed System Extensions */,
 			);
 			name = "Embed System Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -70,14 +70,14 @@
 		021DAAB92AAE8D310055D471 /* PCIDriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = PCIDriverKit.framework; path = System/DriverKit/System/Library/Frameworks/PCIDriverKit.framework; sourceTree = SDKROOT; };
 		0247408E2AB6471F00B4757C /* litepcie_userclient.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = litepcie_userclient.cpp; sourceTree = "<group>"; };
 		0247408F2AB6471F00B4757C /* litepcie_userclient.iig */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.iig; path = litepcie_userclient.iig; sourceTree = "<group>"; };
-		02A93C5C2AAD4DF6001E4E3A /* litex.litepcie.dext */ = {isa = PBXFileReference; explicitFileType = "wrapper.driver-extension"; includeInIndex = 0; path = litex.litepcie.dext; sourceTree = BUILT_PRODUCTS_DIR; };
+		02A93C5C2AAD4DF6001E4E3A /* eevengers.thunderscope.dext */ = {isa = PBXFileReference; explicitFileType = "wrapper.driver-extension"; includeInIndex = 0; path = eevengers.thunderscope.dext; sourceTree = BUILT_PRODUCTS_DIR; };
 		02A93C5F2AAD4DF6001E4E3A /* DriverKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DriverKit.framework; path = Library/Frameworks/DriverKit.framework; sourceTree = DEVELOPER_DIR; };
 		02A93C622AAD4DF6001E4E3A /* litepcie.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = litepcie.cpp; sourceTree = "<group>"; };
 		02A93C642AAD4DF6001E4E3A /* litepcie.iig */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.iig; path = litepcie.iig; sourceTree = "<group>"; };
 		02A93C662AAD4DF6001E4E3A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02CDFF492AD0DE83005D01DB /* litepcie_int.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = litepcie_int.h; sourceTree = "<group>"; };
 		02D55FD72AAD5A25006843ED /* litepcie.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = litepcie.entitlements; sourceTree = "<group>"; };
-		02D55FFE2AAD6845006843ED /* litepcie-manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "litepcie-manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		02D55FFE2AAD6845006843ED /* thunderscope-manager.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "thunderscope-manager.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		02D560092AAD6845006843ED /* litepcie_manager.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = litepcie_manager.entitlements; sourceTree = "<group>"; };
 		02D5600F2AAD6962006843ED /* ExtensionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtensionManager.swift; sourceTree = "<group>"; };
 		02D560102AAD6962006843ED /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -93,7 +93,7 @@
 		02EA5CC52AD223290033662D /* litepcie_helpers.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = litepcie_helpers.c; sourceTree = "<group>"; };
 		02EA5CD02AD224F20033662D /* litepcie.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = litepcie.h; sourceTree = "<group>"; };
 		02EA5CD72AD225B00033662D /* litepcie_ext.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = litepcie_ext.h; sourceTree = "<group>"; };
-		02F5BFAF2AAE644400A35930 /* litepcie-client.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "litepcie-client.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		02F5BFAF2AAE644400A35930 /* thunderscope-client.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "thunderscope-client.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		02F5BFC22AAE648B00A35930 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		02F5BFC32AAE648B00A35930 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		02F5BFC42AAE648B00A35930 /* litepcie_client.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = litepcie_client.entitlements; sourceTree = "<group>"; };
@@ -150,9 +150,9 @@
 		02A93C5D2AAD4DF6001E4E3A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				02A93C5C2AAD4DF6001E4E3A /* litex.litepcie.dext */,
-				02D55FFE2AAD6845006843ED /* litepcie-manager.app */,
-				02F5BFAF2AAE644400A35930 /* litepcie-client.app */,
+				02A93C5C2AAD4DF6001E4E3A /* eevengers.thunderscope.dext */,
+				02D55FFE2AAD6845006843ED /* thunderscope-manager.app */,
+				02F5BFAF2AAE644400A35930 /* thunderscope-client.app */,
 				02EA5CA62AD2214F0033662D /* libliblitepcie.a */,
 			);
 			name = Products;
@@ -263,9 +263,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		02A93C5B2AAD4DF6001E4E3A /* litepcie */ = {
+		02A93C5B2AAD4DF6001E4E3A /* thunderscope */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 02A93C692AAD4DF6001E4E3A /* Build configuration list for PBXNativeTarget "litepcie" */;
+			buildConfigurationList = 02A93C692AAD4DF6001E4E3A /* Build configuration list for PBXNativeTarget "thunderscope" */;
 			buildPhases = (
 				02A93C572AAD4DF6001E4E3A /* Headers */,
 				02A93C582AAD4DF6001E4E3A /* Sources */,
@@ -276,14 +276,14 @@
 			);
 			dependencies = (
 			);
-			name = litepcie;
+			name = thunderscope;
 			productName = litepcie;
-			productReference = 02A93C5C2AAD4DF6001E4E3A /* litex.litepcie.dext */;
+			productReference = 02A93C5C2AAD4DF6001E4E3A /* eevengers.thunderscope.dext */;
 			productType = "com.apple.product-type.driver-extension";
 		};
-		02D55FFD2AAD6845006843ED /* litepcie-manager */ = {
+		02D55FFD2AAD6845006843ED /* thunderscope-manager */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 02D5600A2AAD6845006843ED /* Build configuration list for PBXNativeTarget "litepcie-manager" */;
+			buildConfigurationList = 02D5600A2AAD6845006843ED /* Build configuration list for PBXNativeTarget "thunderscope-manager" */;
 			buildPhases = (
 				02D55FFA2AAD6845006843ED /* Sources */,
 				02D55FFB2AAD6845006843ED /* Frameworks */,
@@ -295,9 +295,9 @@
 			dependencies = (
 				02D560172AAD6BD0006843ED /* PBXTargetDependency */,
 			);
-			name = "litepcie-manager";
+			name = "thunderscope-manager";
 			productName = "litepcie-manager";
-			productReference = 02D55FFE2AAD6845006843ED /* litepcie-manager.app */;
+			productReference = 02D55FFE2AAD6845006843ED /* thunderscope-manager.app */;
 			productType = "com.apple.product-type.application";
 		};
 		02EA5CA52AD2214F0033662D /* liblitepcie */ = {
@@ -317,9 +317,9 @@
 			productReference = 02EA5CA62AD2214F0033662D /* libliblitepcie.a */;
 			productType = "com.apple.product-type.library.static";
 		};
-		02F5BFAE2AAE644400A35930 /* litepcie-client */ = {
+		02F5BFAE2AAE644400A35930 /* thunderscope-client */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 02F5BFBF2AAE644500A35930 /* Build configuration list for PBXNativeTarget "litepcie-client" */;
+			buildConfigurationList = 02F5BFBF2AAE644500A35930 /* Build configuration list for PBXNativeTarget "thunderscope-client" */;
 			buildPhases = (
 				02EA5CDA2AD226040033662D /* Headers */,
 				02F5BFAB2AAE644400A35930 /* Sources */,
@@ -330,9 +330,9 @@
 			);
 			dependencies = (
 			);
-			name = "litepcie-client";
+			name = "thunderscope-client";
 			productName = "litepcie-client";
-			productReference = 02F5BFAF2AAE644400A35930 /* litepcie-client.app */;
+			productReference = 02F5BFAF2AAE644400A35930 /* thunderscope-client.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -343,7 +343,8 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1420;
-				LastUpgradeCheck = 1420;
+				LastUpgradeCheck = 1620;
+				ORGANIZATIONNAME = eevengers;
 				TargetAttributes = {
 					02A93C5B2AAD4DF6001E4E3A = {
 						CreatedOnToolsVersion = 14.2;
@@ -360,7 +361,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 02A93C562AAD4DF6001E4E3A /* Build configuration list for PBXProject "litepcie" */;
+			buildConfigurationList = 02A93C562AAD4DF6001E4E3A /* Build configuration list for PBXProject "thunderscope" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -373,9 +374,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				02A93C5B2AAD4DF6001E4E3A /* litepcie */,
-				02D55FFD2AAD6845006843ED /* litepcie-manager */,
-				02F5BFAE2AAE644400A35930 /* litepcie-client */,
+				02A93C5B2AAD4DF6001E4E3A /* thunderscope */,
+				02D55FFD2AAD6845006843ED /* thunderscope-manager */,
+				02F5BFAE2AAE644400A35930 /* thunderscope-client */,
 				02EA5CA52AD2214F0033662D /* liblitepcie */,
 			);
 		};
@@ -450,7 +451,7 @@
 /* Begin PBXTargetDependency section */
 		02D560172AAD6BD0006843ED /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 02A93C5B2AAD4DF6001E4E3A /* litepcie */;
+			target = 02A93C5B2AAD4DF6001E4E3A /* thunderscope */;
 			targetProxy = 02D560162AAD6BD0006843ED /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -459,6 +460,7 @@
 		02A93C672AAD4DF6001E4E3A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -494,6 +496,7 @@
 				DRIVERKIT_DEPLOYMENT_TARGET = 21.0;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -518,6 +521,7 @@
 		02A93C682AAD4DF6001E4E3A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -553,6 +557,7 @@
 				DRIVERKIT_DEPLOYMENT_TARGET = 21.0;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -564,13 +569,14 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = driverkit;
+				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};
 		02A93C6A2AAD4DF6001E4E3A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -581,9 +587,11 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = litepcie/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = thunderscope;
+				INFOPLIST_KEY_OSBundleUsageDescription = "";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = litex.litepcie;
-				PRODUCT_NAME = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = eevengers.thunderscope;
+				PRODUCT_NAME = eevengers.thunderscope;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SKIP_INSTALL = YES;
@@ -594,7 +602,7 @@
 		02A93C6B2AAD4DF6001E4E3A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
+				AD_HOC_CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
@@ -605,9 +613,11 @@
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = litepcie/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = thunderscope;
+				INFOPLIST_KEY_OSBundleUsageDescription = "";
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = litex.litepcie;
-				PRODUCT_NAME = "$(inherited)";
+				PRODUCT_BUNDLE_IDENTIFIER = eevengers.thunderscope;
+				PRODUCT_NAME = eevengers.thunderscope;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				SKIP_INSTALL = YES;
@@ -623,9 +633,11 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "litepcie-manager/litepcie_manager.entitlements";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -638,7 +650,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "litex.litepcie-manager";
+				PRODUCT_BUNDLE_IDENTIFIER = "eevengers.thunderscope-manager";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -656,9 +668,11 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = "litepcie-manager/litepcie_manager.entitlements";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -671,7 +685,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "litex.litepcie-manager";
+				PRODUCT_BUNDLE_IDENTIFIER = "eevengers.thunderscope-manager";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -685,6 +699,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = GYNGBSRX89;
 				EXECUTABLE_PREFIX = lib;
@@ -699,6 +714,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = GYNGBSRX89;
 				EXECUTABLE_PREFIX = lib;
 				MACOSX_DEPLOYMENT_TARGET = 12.6;
@@ -714,9 +730,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "litepcie-client/litepcie_client.entitlements";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -729,7 +747,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "litex.litepcie-client";
+				PRODUCT_BUNDLE_IDENTIFIER = "eevengers.thunderscope-client";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -742,9 +760,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "litepcie-client/litepcie_client.entitlements";
+				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -757,7 +777,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "litex.litepcie-client";
+				PRODUCT_BUNDLE_IDENTIFIER = "eevengers.thunderscope-client";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -767,7 +787,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		02A93C562AAD4DF6001E4E3A /* Build configuration list for PBXProject "litepcie" */ = {
+		02A93C562AAD4DF6001E4E3A /* Build configuration list for PBXProject "thunderscope" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				02A93C672AAD4DF6001E4E3A /* Debug */,
@@ -776,7 +796,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		02A93C692AAD4DF6001E4E3A /* Build configuration list for PBXNativeTarget "litepcie" */ = {
+		02A93C692AAD4DF6001E4E3A /* Build configuration list for PBXNativeTarget "thunderscope" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				02A93C6A2AAD4DF6001E4E3A /* Debug */,
@@ -785,7 +805,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		02D5600A2AAD6845006843ED /* Build configuration list for PBXNativeTarget "litepcie-manager" */ = {
+		02D5600A2AAD6845006843ED /* Build configuration list for PBXNativeTarget "thunderscope-manager" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				02D5600B2AAD6845006843ED /* Debug */,
@@ -803,7 +823,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		02F5BFBF2AAE644500A35930 /* Build configuration list for PBXNativeTarget "litepcie-client" */ = {
+		02F5BFBF2AAE644500A35930 /* Build configuration list for PBXNativeTarget "thunderscope-client" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				02F5BFC02AAE644500A35930 /* Debug */,

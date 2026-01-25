@@ -12,6 +12,8 @@
 
 #include <PCIDriverKit/PCIDriverKit.h>
 
+#include <math.h>
+
 #include "config.h"
 #include "csr.h"
 #include "litepcie.h"
@@ -34,7 +36,7 @@ struct litepcie_IVars {
 
 kern_return_t litepcie::InitDMAChannel(int chan_idx)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
 
     kern_return_t ret = kIOReturnSuccess;
     uint64_t dmaFlags = kIOMemoryDirectionInOut;
@@ -49,6 +51,9 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
     
     ivars->channel[chan_idx]->readerEnabled = false;
     ivars->channel[chan_idx]->writerEnabled = false;
+
+    ivars->channel[chan_idx]->rd_intr_count = DMA_BUFFER_PER_IRQ;
+    ivars->channel[chan_idx]->wr_intr_count = DMA_BUFFER_PER_IRQ;
 
     ivars->channel[chan_idx]->dmaReaderVirtualSegments = IONew(IOAddressSegment*, DMA_BUFFER_COUNT);
     ivars->channel[chan_idx]->dmaReaderPhysicalSegments = IONew(IOAddressSegment*, DMA_BUFFER_COUNT);
@@ -71,13 +76,13 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
         ivars->channel[chan_idx]->dmaReaderVirtualSegments[i] = new IOAddressSegment;
         ivars->channel[chan_idx]->dmaReaderPhysicalSegments[i] = new IOAddressSegment;
 
-        ret = IOBufferMemoryDescriptor::Create(kIOMemoryDirectionInOut, DMA_BUFFER_SIZE, 0, &ivars->channel[chan_idx]->dmaReaderBuffers[i]);
+        ret = IOBufferMemoryDescriptor::Create(kIOMemoryDirectionInOut, DMA_RD_BUFFER_SIZE, 0, &ivars->channel[chan_idx]->dmaReaderBuffers[i]);
         if (ret != kIOReturnSuccess) {
             Log("failed to create dma buffer");
             return ret;
         }
 
-        ivars->channel[chan_idx]->dmaReaderBuffers[i]->SetLength(DMA_BUFFER_SIZE);
+        ivars->channel[chan_idx]->dmaReaderBuffers[i]->SetLength(DMA_RD_BUFFER_SIZE);
         ivars->channel[chan_idx]->dmaReaderBuffers[i]->GetAddressRange(ivars->channel[chan_idx]->dmaReaderVirtualSegments[i]);
 
         IODMACommand::Create(ivars->pciDevice, kIODMACommandCreateNoOptions, &dmaSpecification, &ivars->channel[chan_idx]->dmaReaderCommands[i]);
@@ -92,9 +97,9 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
             &dmaFlags,
             &dmaSegmentCount,
             ivars->channel[chan_idx]->dmaReaderPhysicalSegments[i]);
-        ivars->channel[chan_idx]->dmaReaderBuffers[i]->SetLength(DMA_BUFFER_SIZE);
+        ivars->channel[chan_idx]->dmaReaderBuffers[i]->SetLength(DMA_RD_BUFFER_SIZE);
 
-        for (int j = 0; j < DMA_BUFFER_SIZE; j += 1) {
+        for (int j = 0; j < DMA_RD_BUFFER_SIZE; j += 1) {
             reinterpret_cast<uint8_t*>(ivars->channel[chan_idx]->dmaReaderVirtualSegments[i]->address)[j] = i + 1;
         }
 
@@ -108,13 +113,13 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
         ivars->channel[chan_idx]->dmaWriterVirtualSegments[i] = new IOAddressSegment;
         ivars->channel[chan_idx]->dmaWriterPhysicalSegments[i] = new IOAddressSegment;
 
-        ret = IOBufferMemoryDescriptor::Create(kIOMemoryDirectionInOut, DMA_BUFFER_SIZE, 0, &ivars->channel[chan_idx]->dmaWriterBuffers[i]);
+        ret = IOBufferMemoryDescriptor::Create(kIOMemoryDirectionInOut, DMA_WR_BUFFER_SIZE, 0, &ivars->channel[chan_idx]->dmaWriterBuffers[i]);
         if (ret != kIOReturnSuccess) {
             Log("failed to create dma buffer");
             return ret;
         }
 
-        ivars->channel[chan_idx]->dmaWriterBuffers[i]->SetLength(DMA_BUFFER_SIZE);
+        ivars->channel[chan_idx]->dmaWriterBuffers[i]->SetLength(DMA_WR_BUFFER_SIZE);
         ivars->channel[chan_idx]->dmaWriterBuffers[i]->GetAddressRange(ivars->channel[chan_idx]->dmaWriterVirtualSegments[i]);
 
         IODMACommand::Create(ivars->pciDevice, kIODMACommandCreateNoOptions, &dmaSpecification, &ivars->channel[chan_idx]->dmaWriterCommands[i]);
@@ -129,14 +134,34 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
             &dmaFlags,
             &dmaSegmentCount,
             ivars->channel[chan_idx]->dmaWriterPhysicalSegments[i]);
-        ivars->channel[chan_idx]->dmaWriterBuffers[i]->SetLength(DMA_BUFFER_SIZE);
+        ivars->channel[chan_idx]->dmaWriterBuffers[i]->SetLength(DMA_WR_BUFFER_SIZE);
 
-        for (int j = 0; j < DMA_BUFFER_SIZE; j += 1) {
+        for (int j = 0; j < DMA_WR_BUFFER_SIZE; j += 1) {
             reinterpret_cast<uint8_t*>(ivars->channel[chan_idx]->dmaWriterVirtualSegments[i]->address)[j] = i + 2;
         }
 
         if (ret != kIOReturnSuccess) {
             Log("failed to prepare dma with error: 0x%08x", ret);
+            return ret;
+        }
+
+        ivars->channel[chan_idx]->readerEvent = reinterpret_cast<uintptr_t>(&ivars->channel[chan_idx]->readerEvent);
+        ivars->channel[chan_idx]->readerLock = IOLockAlloc();
+        ivars->channel[chan_idx]->userReaderLock = IOLockAlloc();
+
+        if(ivars->channel[chan_idx]->readerLock == nullptr )
+        {
+            Log("failed to initialize channel %d reader lock", chan_idx);
+            return ret;
+        }
+
+        ivars->channel[chan_idx]->writerEvent = reinterpret_cast<uintptr_t>(&ivars->channel[chan_idx]->writerEvent);
+        ivars->channel[chan_idx]->writerLock = IOLockAlloc();
+        ivars->channel[chan_idx]->userWriterLock = IOLockAlloc();
+
+        if(ivars->channel[chan_idx]->writerLock == nullptr)
+        {
+            Log("failed to initialize channel %d writer lock", chan_idx);
             return ret;
         }
     }
@@ -147,14 +172,28 @@ kern_return_t litepcie::InitDMAChannel(int chan_idx)
     return ret;
 }
 
-kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx)
+kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx, uint32_t count)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_ENABLE_ADDR), 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_RESET_ADDR), 1);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_LOOP_PROG_N_ADDR), 0);
+
+    /* Validate Interrupt Config */
+    if(count == 0)
+    {
+        ivars->channel[chan_idx]->rd_intr_count = DMA_BUFFER_PER_IRQ;
+    }
+    else if (count > (DMA_BUFFER_COUNT / 2))
+    {
+        ivars->channel[chan_idx]->rd_intr_count = DMA_BUFFER_COUNT / 2;
+    }
+    else
+    {
+        ivars->channel[chan_idx]->rd_intr_count = count;
+    }
 
     for (int i = 0; i < DMA_BUFFER_COUNT; i += 1) {
         DMADescriptor desc;
@@ -163,35 +202,44 @@ kern_return_t litepcie::SetupDMAReaderChannel(int chan_idx)
         uint32_t msb = (readerAddress >> 32) & 0xFFFF'FFFF;
         desc.lsb = lsb;
         desc.config.reg.last = 1;
-        desc.config.reg.length = DMA_BUFFER_SIZE;
-        desc.config.reg.disableIRQ = (((i + 1) % DMA_BUFFER_PER_IRQ) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
+        desc.config.reg.length = DMA_RD_BUFFER_SIZE;
+        desc.config.reg.disableIRQ = (((i + 1) % ivars->channel[chan_idx]->rd_intr_count) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
 
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_VALUE_ADDR), desc.config.raw);
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_VALUE_ADDR) + 4, lsb);
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_WE_ADDR), msb);
 
-        //        Log("SetupDMAReaderChannel() %i addr 0x%llx lsb 0x%x msb 0x%x", i, readerAddress, lsb, msb);
-        //        IOSleep(10);
     }
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_LOOP_PROG_N_ADDR), 1);
 
-    //    uint32_t level = 0;
-    //    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_LEVEL_ADDR), &level);
-    //    Log("level 0x%x", level);
 
     Log("finished");
     return ret;
 }
 
-kern_return_t litepcie::SetupDMAWriterChannel(int chan_idx)
+kern_return_t litepcie::SetupDMAWriterChannel(int chan_idx, uint32_t count)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_ENABLE_ADDR), 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_RESET_ADDR), 1);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_LOOP_PROG_N_ADDR), 0);
+
+    /* Validate Interrupt Config */
+    if(count == 0)
+    {
+        ivars->channel[chan_idx]->wr_intr_count = DMA_BUFFER_PER_IRQ;
+    }
+    else if (count > (DMA_BUFFER_COUNT / 2))
+    {
+        ivars->channel[chan_idx]->wr_intr_count = DMA_BUFFER_COUNT / 2;
+    }
+    else
+    {
+        ivars->channel[chan_idx]->wr_intr_count = count;
+    }
 
     for (int i = 0; i < DMA_BUFFER_COUNT; i += 1) {
         DMADescriptor desc;
@@ -200,22 +248,17 @@ kern_return_t litepcie::SetupDMAWriterChannel(int chan_idx)
         uint32_t msb = (writerAddress >> 32) & 0xFFFF'FFFF;
         desc.lsb = lsb;
         desc.config.reg.last = 1;
-        desc.config.reg.length = DMA_BUFFER_SIZE;
-        desc.config.reg.disableIRQ = (((i + 1) % DMA_BUFFER_PER_IRQ) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
+        desc.config.reg.length = DMA_WR_BUFFER_SIZE;
+        desc.config.reg.disableIRQ = (((i + 1) % ivars->channel[chan_idx]->wr_intr_count) == 0) ? 0 : 1; // set bit on when buffer idx of increments of DMA_BUFFER_PER_IRQ
 
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_VALUE_ADDR), desc.config.raw);
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_VALUE_ADDR) + 4, lsb);
         ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_WE_ADDR), msb);
 
-        //        Log("SetupDMAWriterChannel() %i addr 0x%llx lsb 0x%x msb 0x%x", i, writerAddress, lsb, msb);
-        //        IOSleep(10);
     }
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_LOOP_PROG_N_ADDR), 1);
 
-    //    uint32_t level = 0;
-    //    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_LEVEL_ADDR), &level);
-    //    Log("SetupDMAWriterChannel() level 0x%x", level);
 
     Log("finished");
     return ret;
@@ -233,16 +276,21 @@ bool litepcie::IsDMAWriterChannelEnabled(int chan_idx)
 
 kern_return_t litepcie::StartDMAReaderChannel(int chan_idx, bool loop)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
 
     ivars->channel[chan_idx]->dmaCounts->hwReaderCountTotal = 0;
     ivars->channel[chan_idx]->dmaCounts->hwReaderCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderLost = 0;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_LOOP_PROG_N_ADDR), loop ? 1 : 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_ENABLE_ADDR), 1);
     
     ivars->channel[chan_idx]->readerEnabled = true;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderCountTotal = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderLost = 0;
+    ivars->channel[chan_idx]->dmaCounts->swReaderCount = 0;
 
     Log("finished");
     return ret;
@@ -250,16 +298,21 @@ kern_return_t litepcie::StartDMAReaderChannel(int chan_idx, bool loop)
 
 kern_return_t litepcie::StartDMAWriterChannel(int chan_idx, bool loop)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
 
     ivars->channel[chan_idx]->dmaCounts->hwWriterCountTotal = 0;
     ivars->channel[chan_idx]->dmaCounts->hwWriterCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterLost = 0;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_LOOP_PROG_N_ADDR), loop ? 1 : 0);
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_ENABLE_ADDR), 1);
     
     ivars->channel[chan_idx]->writerEnabled = true;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterCountTotal = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterLost = 0;
+    ivars->channel[chan_idx]->dmaCounts->swWriterCount = 0;
 
     Log("finished");
     return ret;
@@ -267,7 +320,7 @@ kern_return_t litepcie::StartDMAWriterChannel(int chan_idx, bool loop)
 
 kern_return_t litepcie::StopDMAReaderChannel(int chan_idx)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_TABLE_LOOP_PROG_N_ADDR), 0);
@@ -279,6 +332,10 @@ kern_return_t litepcie::StopDMAReaderChannel(int chan_idx)
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(PCIE_DMA_READER_TABLE_FLUSH_OFFSET), 1);
     
     ivars->channel[chan_idx]->readerEnabled = false;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderCountTotal = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderLost = 0;
+    ivars->channel[chan_idx]->dmaCounts->swReaderCount = 0;
 
     Log("finished");
     return ret;
@@ -286,7 +343,7 @@ kern_return_t litepcie::StopDMAReaderChannel(int chan_idx)
 
 kern_return_t litepcie::StopDMAWriterChannel(int chan_idx)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_WRITER_TABLE_LOOP_PROG_N_ADDR), 0);
@@ -298,6 +355,10 @@ kern_return_t litepcie::StopDMAWriterChannel(int chan_idx)
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(PCIE_DMA_WRITER_TABLE_FLUSH_OFFSET), 1);
     
     ivars->channel[chan_idx]->writerEnabled = false;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterCountTotal = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterLost = 0;
+    ivars->channel[chan_idx]->dmaCounts->swWriterCount = 0;
 
     Log("finished");
     return ret;
@@ -305,7 +366,7 @@ kern_return_t litepcie::StopDMAWriterChannel(int chan_idx)
 
 kern_return_t litepcie::StopDMAChannel(int chan_idx)
 {
-    Log("entered");
+    Log("entered, chan %d", chan_idx);
     kern_return_t ret = kIOReturnSuccess;
 
     ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_READER_ENABLE_ADDR), 0);
@@ -313,6 +374,16 @@ kern_return_t litepcie::StopDMAChannel(int chan_idx)
     
     ivars->channel[chan_idx]->readerEnabled = false;
     ivars->channel[chan_idx]->writerEnabled = false;
+
+    ivars->channel[chan_idx]->dmaCounts->hwWriterCountTotal = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwWriterLost = 0;
+    ivars->channel[chan_idx]->dmaCounts->swWriterCount = 0;
+
+    ivars->channel[chan_idx]->dmaCounts->hwReaderCountTotal = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderCountPrev = 0;
+    ivars->channel[chan_idx]->dmaCounts->hwReaderLost = 0;
+    ivars->channel[chan_idx]->dmaCounts->swReaderCount = 0;
 
     Log("finished");
     return ret;
@@ -322,8 +393,6 @@ void litepcie::CleanupDMAChannel(int chan_idx)
 {
     Log("entered");
     StopDMAChannel(chan_idx);
-    //    StopDMAReaderChannel(chan_idx);
-    //    StopDMAWriterChannel(chan_idx);
 
     Log("deleting misc descriptor objects");
     for (int i = 0; i < DMA_BUFFER_COUNT; i += 1) {
@@ -352,6 +421,12 @@ void litepcie::CleanupDMAChannel(int chan_idx)
     IODelete(ivars->channel[chan_idx]->dmaReaderBuffers, IOBufferMemoryDescriptor*, DMA_BUFFER_COUNT);
     IODelete(ivars->channel[chan_idx]->dmaReaderVirtualSegments, IOAddressSegment*, DMA_BUFFER_COUNT);
     IODelete(ivars->channel[chan_idx]->dmaReaderPhysicalSegments, IOAddressSegment*, DMA_BUFFER_COUNT);
+
+    IOLockFree(ivars->channel[chan_idx]->readerLock);
+    IOLockFree(ivars->channel[chan_idx]->writerLock);
+
+    IOLockFree(ivars->channel[chan_idx]->userReaderLock);
+    IOLockFree(ivars->channel[chan_idx]->userWriterLock);
 
     IOSleep(100);
 
@@ -413,6 +488,153 @@ kern_return_t litepcie::GetDmaCountDescriptor(int chan_idx, IOMemoryDescriptor**
     return ret;
 }
 
+uint64_t litepcie::GetDmaWriterCount(int chan_idx)
+{
+    uint64_t hwWriterCount;
+    Log("entered");
+    
+    IOLockLock(ivars->channel[chan_idx]->writerLock);
+    hwWriterCount= ivars->channel[chan_idx]->dmaCounts->hwWriterCountTotal;
+    IOLockUnlock(ivars->channel[chan_idx]->writerLock);
+    
+    Log("finished");
+    return hwWriterCount;
+}
+
+uint64_t litepcie::GetDmaReaderCount(int chan_idx)
+{
+    uint64_t hwReaderCount;
+    Log("entered");
+    
+    IOLockLock(ivars->channel[chan_idx]->readerLock);
+    hwReaderCount = ivars->channel[chan_idx]->dmaCounts->hwReaderCountTotal;
+    IOLockUnlock(ivars->channel[chan_idx]->readerLock);
+    
+    Log("finished");
+    return hwReaderCount;
+}
+
+uint64_t litepcie::DmaChannelRead(int chan_index, IOMemoryMap* buffer)
+{
+    int64_t availWriterCount;
+    uint64_t bytesRead, length, overflows=0;
+    // kern_return_t sleepResult;
+    
+    Log("entered");
+    
+    bytesRead = 0;
+    length = buffer->GetLength();
+
+    while(bytesRead < length)
+    {
+        if(!ivars->channel[chan_index]->writerEnabled)
+        {
+            Log("DmaChannelRead failed, writer not enabled");
+            break;
+        }
+        if(length - bytesRead < DMA_WR_BUFFER_SIZE)
+        {
+            //Must transfer in buffer-sized chunks
+            break;
+        }
+        IOLockLock(ivars->channel[chan_index]->writerLock);
+        availWriterCount = ivars->channel[chan_index]->dmaCounts->hwWriterCountTotal - ivars->channel[chan_index]->dmaCounts->swWriterCount;
+        IOLockUnlock(ivars->channel[chan_index]->writerLock);
+
+        if(availWriterCount > 0)
+        {
+            if(availWriterCount > (DMA_BUFFER_COUNT - ivars->channel[chan_index]->wr_intr_count))
+            {
+                overflows++;
+            }
+            else
+            {
+                //memcpy
+                memcpy(reinterpret_cast<uint8_t*>(buffer->GetAddress() + bytesRead),
+                    reinterpret_cast<uint8_t*>((ivars->channel[chan_index]->dmaWriterVirtualSegments[
+                        ivars->channel[chan_index]->dmaCounts->swWriterCount % DMA_BUFFER_COUNT]->address)),
+                    DMA_WR_BUFFER_SIZE
+                );
+                bytesRead += DMA_WR_BUFFER_SIZE;
+            }
+            ivars->channel[chan_index]->dmaCounts->swWriterCount++;
+        }
+        else
+        {
+            IOSleep(0.00005); // Sleep for 50us
+        }
+
+    }
+
+    if(overflows > 0)
+    {
+        Log("Overflow Error in DMAChannelRead: %lld", overflows);
+        ivars->channel[chan_index]->dmaCounts->hwWriterLost += overflows;
+    }
+
+    Log("finished");
+    return bytesRead;
+}
+
+uint64_t litepcie::DmaChannelWrite(int chan_index, IOMemoryMap* buffer)
+{
+    uint64_t hwReaderCount;
+    Log("entered");
+    
+    IOLockLock(ivars->channel[chan_index]->readerLock);
+    hwReaderCount = ivars->channel[chan_index]->dmaCounts->hwReaderCountTotal;
+    IOLockUnlock(ivars->channel[chan_index]->readerLock);
+    
+    Log("finished");
+    return hwReaderCount;
+}
+
+uint8_t litepcie::DmaChannelGetReaderLock(int chan_idx)
+{
+    if ((ivars->channel[chan_idx]->userReaderLock != nullptr) &&
+        IOLockTryLock(ivars->channel[chan_idx]->userReaderLock))
+    {
+        return 1; // Lock acquired
+    }
+    else
+    {
+        Log("Failed to acquire reader lock for channel %d", chan_idx);
+        return 0; // Lock not acquired
+    }
+}
+
+uint8_t litepcie::DmaChannelGetWriterLock(int chan_idx)
+{
+    if ((ivars->channel[chan_idx]->userWriterLock != nullptr) &&
+        IOLockTryLock(ivars->channel[chan_idx]->userWriterLock))
+    {
+        return 1; // Lock acquired
+    }
+    else
+    {
+        Log("Failed to acquire writer lock for channel %d", chan_idx);
+        return 0; // Lock not acquired
+    }
+}
+
+uint8_t litepcie::DmaChannelReleaseReaderLock(int chan_idx)
+{
+    if ((ivars->channel[chan_idx]->userReaderLock != nullptr))
+    {
+        IOLockUnlock(ivars->channel[chan_idx]->userReaderLock);
+    }
+    return 0;
+}
+
+uint8_t litepcie::DmaChannelReleaseWriterLock(int chan_idx)
+{
+    if ((ivars->channel[chan_idx]->userWriterLock != nullptr))
+    {
+        IOLockUnlock(ivars->channel[chan_idx]->userWriterLock);
+    }
+    return 0;
+}
+
 bool litepcie::init(void)
 {
     bool result = false;
@@ -447,7 +669,7 @@ IMPL(litepcie, Start)
     uint64_t interruptType = 0;
     uint32_t msiInterruptIndex = 0;
 
-    OSAction* interruptOccuredAction;
+    OSAction* interruptOccurredAction;
 
     Log("entered");
 
@@ -491,25 +713,7 @@ IMPL(litepcie, Start)
     Log("BAR0: %x", buf[1]);
     Log("BAR1: %x", buf[2]);
 
-    // test our scratch register
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_CTRL_SCRATCH_ADDR), buf + 3);
-    Log("scratch: %x", buf[3]);
-    buf[3] = 0xDEADBEEF;
-    ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_CTRL_SCRATCH_ADDR), buf[3]);
-    buf[3] = 0xCAFECAFE;
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_CTRL_SCRATCH_ADDR), buf + 3);
-    Log("scratch: %x", buf[3]);
-
-    // check led register and set pattern
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_LEDS_BASE), buf + 3);
-    Log("led: %x", buf[3]);
-    buf[3] = 0b0101;
-    ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_LEDS_BASE), buf[3]);
-    buf[3] = 0b0101;
-    ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(CSR_LEDS_BASE), buf + 3);
-    Log("led: %x", buf[3]);
-
-    while ((ret = IOInterruptDispatchSource::GetInterruptType(ivars->pciDevice, msiInterruptIndex, &interruptType)) == kIOReturnSuccess) {
+    while (IOInterruptDispatchSource::GetInterruptType(ivars->pciDevice, msiInterruptIndex, &interruptType) == kIOReturnSuccess) {
         Log("checking interrupt: %i type: %llx", msiInterruptIndex, interruptType);
         if ((interruptType & kIOInterruptTypePCIMessaged) != 0) {
             break;
@@ -538,14 +742,15 @@ IMPL(litepcie, Start)
         goto Exit;
     }
 
-    ret = CreateActionInterruptOccurred(sizeof(void*), &interruptOccuredAction);
+    ret = CreateActionInterruptOccurred(sizeof(void*), &interruptOccurredAction);
     if (ret != kIOReturnSuccess) {
         Log("failed to create interrupt action");
         Stop(provider);
         goto Exit;
     }
 
-    ret = ivars->interruptSource->SetHandler(interruptOccuredAction);
+    ret = ivars->interruptSource->SetHandler(interruptOccurredAction);
+    interruptOccurredAction->release();
     if (ret != kIOReturnSuccess) {
         Log("failed to set interrupt handler");
         Stop(provider);
@@ -560,9 +765,6 @@ IMPL(litepcie, Start)
     }
 
     IOSleep(10);
-
-    ivars->pciDevice->MemoryWrite32(0, CSR_TO_OFFSET(CSR_PCIE_DMA0_LOOPBACK_ENABLE_ADDR), 1);
-
 #ifdef CSR_PCIE_DMA0_BASE
     ivars->channel[0] = new DMAChannel;
     ivars->channel[0]->baseAddress = CSR_PCIE_DMA0_BASE;
@@ -627,12 +829,6 @@ IMPL(litepcie, Start)
     InitDMAChannel(7);
 #endif
 
-//    SetupDMAWriterChannel(0);
-//    SetupDMAReaderChannel(0);
-//
-//    StartDMAWriterChannel(0, true);
-//    StartDMAReaderChannel(0, true);
-
     // register service so we can be access by client app
     ret = RegisterService();
     if (ret != kIOReturnSuccess) {
@@ -647,10 +843,10 @@ Exit:
 
 void IMPL(litepcie, InterruptOccurred)
 {
-    bool printLog = (ivars->interruptCount % 4096) == 0;
+    bool printLog = (ivars->interruptCount % 128) == 0;
 
     if (printLog)
-        Log("entered");
+        Log("entered interrupt");
     uint32_t vector = 0, clear = 0;
     
     uint64_t hwcount = 0;
@@ -665,41 +861,45 @@ void IMPL(litepcie, InterruptOccurred)
 
         if (vector & (1 << ivars->channel[i]->readerInterrupt)) {
             clear |= (1 << ivars->channel[i]->readerInterrupt);
-        }
         
-        ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(ivars->channel[i]->baseAddress) + PCIE_DMA_READER_TABLE_LOOP_STATUS_OFFSET, &rstatus.raw);
-        hwcount = rstatus.reg.index * DMA_BUFFER_COUNT + rstatus.reg.count;
+            ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(ivars->channel[i]->baseAddress) + PCIE_DMA_READER_TABLE_LOOP_STATUS_OFFSET, &rstatus.raw);
+            hwcount = rstatus.reg.index * DMA_BUFFER_COUNT + rstatus.reg.count;
 
-        if (ivars->channel[i]->dmaCounts->hwReaderCountPrev > hwcount) {
-            ivars->channel[i]->dmaCounts->hwReaderCountTotal += (DMA_BUFFER_COUNT * (0xFFFF + 1) - ivars->channel[i]->dmaCounts->hwReaderCountPrev) + hwcount; // status wraparound
-        } else {
-            ivars->channel[i]->dmaCounts->hwReaderCountTotal += (hwcount - ivars->channel[i]->dmaCounts->hwReaderCountPrev);
+            IOLockLock(ivars->channel[i]->readerLock);
+            ivars->channel[i]->dmaCounts->hwReaderCountTotal &= ((~(DMA_BUFFER_COUNT - 1) << 16) & 0xffffffffffff0000);
+			ivars->channel[i]->dmaCounts->hwReaderCountTotal |= (hwcount);
+			if (ivars->channel[i]->dmaCounts->hwReaderCountPrev > ivars->channel[i]->dmaCounts->hwReaderCountTotal)
+			{
+                ivars->channel[i]->dmaCounts->hwReaderCountTotal += (1 << (int)(floor(log2(DMA_BUFFER_COUNT)) + 16));
+            }
+            ivars->channel[i]->dmaCounts->hwReaderCountPrev = ivars->channel[i]->dmaCounts->hwReaderCountTotal;
+            IOLockUnlock(ivars->channel[i]->readerLock);
         }
-
-        ivars->channel[i]->dmaCounts->hwReaderCountPrev = hwcount;
 
         if (vector & (1 << ivars->channel[i]->writerInterrupt)) {
             clear |= (1 << ivars->channel[i]->writerInterrupt);
-        }
         
-        ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(ivars->channel[i]->baseAddress) + PCIE_DMA_WRITER_TABLE_LOOP_STATUS_OFFSET, &wstatus.raw);
-        hwcount = wstatus.reg.index * DMA_BUFFER_COUNT + wstatus.reg.count;
+            ivars->pciDevice->MemoryRead32(0, CSR_TO_OFFSET(ivars->channel[i]->baseAddress) + PCIE_DMA_WRITER_TABLE_LOOP_STATUS_OFFSET, &wstatus.raw);
+            hwcount = wstatus.reg.index * DMA_BUFFER_COUNT + wstatus.reg.count;
 
-        if (ivars->channel[i]->dmaCounts->hwWriterCountPrev > hwcount) {
-            ivars->channel[i]->dmaCounts->hwWriterCountTotal += (DMA_BUFFER_COUNT * (0xFFFF + 1) - ivars->channel[i]->dmaCounts->hwWriterCountPrev) + hwcount; // status wraparound
-        } else {
-            ivars->channel[i]->dmaCounts->hwWriterCountTotal += (hwcount - ivars->channel[i]->dmaCounts->hwWriterCountPrev);
+            IOLockLock(ivars->channel[i]->writerLock);
+            ivars->channel[i]->dmaCounts->hwWriterCountTotal &= ((~(DMA_BUFFER_COUNT - 1) << 16) & 0xffffffffffff0000);
+			ivars->channel[i]->dmaCounts->hwWriterCountTotal |= (hwcount);
+			if (ivars->channel[i]->dmaCounts->hwWriterCountPrev > ivars->channel[i]->dmaCounts->hwWriterCountTotal)
+			{
+                ivars->channel[i]->dmaCounts->hwWriterCountTotal += (1 << (int)(floor(log2(DMA_BUFFER_COUNT)) + 16));
+            }
+			ivars->channel[i]->dmaCounts->hwWriterCountPrev = ivars->channel[i]->dmaCounts->hwWriterCountTotal;
+            IOLockUnlock(ivars->channel[i]->writerLock);
         }
-
-        ivars->channel[i]->dmaCounts->hwWriterCountPrev = hwcount;
 
         if (printLog) {
             mach_timebase_info_data_t info;
             mach_timebase_info(&info);
             double delta_ns = ((time - ivars->interruptTimePrevBM) * info.numer / info.denom);
             double delta_s = delta_ns / 1'000'000'000.0;
-            double readerRate = (DMA_BUFFER_SIZE * (ivars->channel[i]->dmaCounts->hwReaderCountTotal - ivars->readerPrevBM)) / delta_s;
-            double writerRate = (DMA_BUFFER_SIZE * (ivars->channel[i]->dmaCounts->hwWriterCountTotal - ivars->writerPrevBM)) / delta_s;
+            double readerRate = (DMA_RD_BUFFER_SIZE * (ivars->channel[i]->dmaCounts->hwReaderCountTotal - ivars->readerPrevBM)) / delta_s;
+            double writerRate = (DMA_WR_BUFFER_SIZE * (ivars->channel[i]->dmaCounts->hwWriterCountTotal - ivars->writerPrevBM)) / delta_s;
 
             Log("chan %i hwcounts rd: %lli wr: %lli", i, ivars->channel[i]->dmaCounts->hwReaderCountTotal, ivars->channel[i]->dmaCounts->hwWriterCountTotal);
             Log("delta time: %0.3f ns %llu ns", delta_ns, time);
@@ -718,7 +918,7 @@ void IMPL(litepcie, InterruptOccurred)
     if (printLog)
         Log("count: %lli", ivars->interruptCount);
     if (printLog)
-        Log("finished");
+        Log("finished interrupt");
 
     ivars->interruptCount += count;
 }
@@ -731,9 +931,13 @@ IMPL(litepcie, Stop)
 
     Log("entered");
 
-    StopDMAChannel(0);
-
-    CleanupDMAChannel(0);
+    for (int i = 0; i < DMA_CHANNEL_COUNT; i += 1) {
+        if (ivars->channel[i] != nullptr) {
+            CleanupDMAChannel(i);
+            delete ivars->channel[i];
+            ivars->channel[i] = nullptr;
+        }
+    }
 
     if (ivars->defaultDispatchQueue != nullptr) {
         ++cancelCount;

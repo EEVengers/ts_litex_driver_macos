@@ -58,6 +58,7 @@ void config_reader_dma(io_connect_t connection, uint32_t chan_idx, bool enable)
     LitePCIeConfigDmaChannelData data {
         .channel = chan_idx,
         .enable = enable,
+        .interrupt_count = DMA_BUFFER_PER_IRQ,
     };
     
     ret = IOConnectCallStructMethod(connection, LITEPCIE_CONFIG_DMA_READER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), nullptr, 0);
@@ -75,6 +76,7 @@ void config_writer_dma(io_connect_t connection, uint32_t chan_idx, bool enable)
     LitePCIeConfigDmaChannelData data {
         .channel = chan_idx,
         .enable = enable,
+        .interrupt_count = DMA_BUFFER_PER_IRQ,
     };
     
     ret = IOConnectCallStructMethod(connection, LITEPCIE_CONFIG_DMA_WRITER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), nullptr, 0);
@@ -128,8 +130,6 @@ int main(int argc, const char* argv[])
     config_writer_dma(connection, 0, true);
 
     printf("result: addr: 0x%lx data: 0x%08x\n", CSR_TO_OFFSET(CSR_DNA_BASE), readl(connection, CSR_TO_OFFSET(CSR_DNA_BASE)));
-
-    writel(connection, CSR_TO_OFFSET(CSR_LEDS_BASE), 0x1);
 
     mach_vm_address_t readerAddress = 0;
     mach_vm_address_t writerAddress = 0;
@@ -185,9 +185,9 @@ int main(int argc, const char* argv[])
             uint64_t startTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
             for (int j = 0; j < DMA_BUFFER_COUNT; j++) {
                 while(dmaCounts->hwReaderCountTotal <= swReaderCount);
-                memcpy(readerBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       tmpBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       DMA_BUFFER_SIZE);
+                memcpy(readerBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_RD_BUFFER_SIZE),
+                       tmpBuffer + ((swReaderCount % DMA_BUFFER_COUNT) * DMA_RD_BUFFER_SIZE),
+                       DMA_RD_BUFFER_SIZE);
                 swReaderCount += 1;
             }
             uint64_t endTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
@@ -202,9 +202,9 @@ int main(int argc, const char* argv[])
             uint64_t startTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
             for (int j = 0; j < DMA_BUFFER_COUNT; j++) {
                 while(dmaCounts->hwWriterCountTotal <= swWriterCount);
-                memcmp(writerBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       tmpBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_BUFFER_SIZE),
-                       DMA_BUFFER_SIZE);
+                memcmp(writerBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_WR_BUFFER_SIZE),
+                       tmpBuffer + ((swWriterCount % DMA_BUFFER_COUNT) * DMA_WR_BUFFER_SIZE),
+                       DMA_WR_BUFFER_SIZE);
                 swWriterCount += 1;
             }
             uint64_t endTime = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);

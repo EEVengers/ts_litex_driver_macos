@@ -2,6 +2,7 @@
 #define structs_h
 
 #include "litepcie_ext.h"
+#include <DriverKit/IOLib.h>
 
 #define SPI_TIMEOUT 100000 /* in us */
 #define SPI_CTRL_START 0x1
@@ -40,6 +41,18 @@ struct DMAChannel {
     
     bool readerEnabled;
     bool writerEnabled;
+
+    uint32_t rd_intr_count;
+    uint32_t wr_intr_count;
+
+    IOLock* readerLock;
+    IOLock* writerLock;
+
+    IOLock* userReaderLock;
+    IOLock* userWriterLock;
+
+    uintptr_t readerEvent;
+    uintptr_t writerEvent;
 
     IODMACommand** dmaReaderCommands;
     IOBufferMemoryDescriptor** dmaReaderBuffers;

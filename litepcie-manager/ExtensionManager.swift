@@ -12,7 +12,7 @@ class ExtensionManager: NSObject, OSSystemExtensionRequestDelegate {
 
   static let shared = ExtensionManager()
 
-  let bundleIdentifier = "litex.litepcie"
+  let bundleIdentifier = "eevengers.thunderscope"
   var forceReplace = false
   var mode = Mode.none
 

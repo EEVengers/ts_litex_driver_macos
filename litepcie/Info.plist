@@ -4,12 +4,8 @@
 <dict>
 	<key>IOKitPersonalities</key>
 	<dict>
-		<key>litepcie</key>
+		<key>thunderscope</key>
 		<dict>
-			<key>IOPCITunnelCompatible</key>
-			<true/>
-			<key>IOPCIMatch</key>
-			<string>0x702410ee</string>
 			<key>CFBundleIdentifier</key>
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 			<key>CFBundleIdentifierKernel</key>
@@ -18,6 +14,10 @@
 			<string>IOUserService</string>
 			<key>IOMatchCategory</key>
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+			<key>IOPCIMatch</key>
+			<string>0x010120A7</string>
+			<key>IOPCITunnelCompatible</key>
+			<true/>
 			<key>IOProviderClass</key>
 			<string>IOPCIDevice</string>
 			<key>IOResourceMatch</key>
@@ -35,7 +35,5 @@
 			</dict>
 		</dict>
 	</dict>
-	<key>OSBundleUsageDescription</key>
-	<string></string>
 </dict>
 </plist>

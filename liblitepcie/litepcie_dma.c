@@ -65,11 +65,13 @@ void litepcie_dma_set_loopback(int fd, struct litepcie_dma_ctrl *dma, uint8_t lo
 void litepcie_dma_writer(struct litepcie_dma_ctrl *dma, uint8_t enable) {
     kern_return_t ret = kIOReturnSuccess;
     
-    LitePCIeConfigDmaChannelData data;
+    LitePCIeConfigDmaChannelData data, dataOut;
+    size_t outLen = sizeof(LitePCIeConfigDmaChannelData);
     data.channel = dma->dma_channel;
     data.enable = enable;
+    data.interrupt_count = DMA_BUFFER_PER_IRQ;
     
-    ret = IOConnectCallStructMethod(dma->fd, LITEPCIE_CONFIG_DMA_WRITER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), NULL, 0);
+    ret = IOConnectCallStructMethod(dma->fd, LITEPCIE_CONFIG_DMA_WRITER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), &data, &outLen);
     
     if (ret != kIOReturnSuccess) {
         printf("LITEPCIE_CONFIG_DMA_WRITER_CHANNEL failed with error: 0x%08x.\n", ret);
@@ -79,12 +81,14 @@ void litepcie_dma_writer(struct litepcie_dma_ctrl *dma, uint8_t enable) {
 
 void litepcie_dma_reader(struct litepcie_dma_ctrl *dma, uint8_t enable) {
     kern_return_t ret = kIOReturnSuccess;
+    size_t outLen = sizeof(LitePCIeConfigDmaChannelData);
     
-    LitePCIeConfigDmaChannelData data;
+    LitePCIeConfigDmaChannelData data, dataOut;
     data.channel = dma->dma_channel;
     data.enable = enable;
+    data.interrupt_count = DMA_BUFFER_PER_IRQ;
     
-    ret = IOConnectCallStructMethod(dma->fd, LITEPCIE_CONFIG_DMA_READER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), NULL, 0);
+    ret = IOConnectCallStructMethod(dma->fd, LITEPCIE_CONFIG_DMA_READER_CHANNEL, &data, sizeof(LitePCIeConfigDmaChannelData), &data, &outLen);
     
     if (ret != kIOReturnSuccess) {
         printf("LITEPCIE_CONFIG_DMA_READER_CHANNEL failed with error: 0x%08x.\n", ret);
@@ -241,7 +245,7 @@ char *litepcie_dma_next_read_buffer(struct litepcie_dma_ctrl *dma)
         return NULL;
     
     dma->buffers_available_read--;
-    uint8_t *ret = dma->buf_rd + dma->usr_read_buf_offset * DMA_BUFFER_SIZE;
+    uint8_t *ret = dma->buf_rd + dma->usr_read_buf_offset * DMA_WR_BUFFER_SIZE;
     dma->usr_read_buf_offset = (dma->usr_read_buf_offset + 1) % DMA_BUFFER_COUNT;
     return (char*)ret;
 }
@@ -262,7 +266,7 @@ char *litepcie_dma_next_write_buffer(struct litepcie_dma_ctrl *dma)
     
     dma->buffers_available_write--;
     
-    uint8_t *ret = dma->buf_wr + dma->usr_write_buf_offset * DMA_BUFFER_SIZE;
+    uint8_t *ret = dma->buf_wr + dma->usr_write_buf_offset * DMA_WR_BUFFER_SIZE;
     dma->usr_write_buf_offset = (dma->usr_write_buf_offset + 1) % DMA_BUFFER_COUNT;
     return (char*)ret;
 }
